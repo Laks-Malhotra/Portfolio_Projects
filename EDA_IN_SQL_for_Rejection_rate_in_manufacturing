@@ -1,0 +1,222 @@
+--Project_Name: Rejection rate in Manufacturing industry
+--Project type: EDA with SQL
+--Author: Laks Malhotra
+
+
+
+
+-----Let's create a SQL Script for Rejection rate in Manufacturing environment
+
+--Let's create a table as a workbook
+CREATE TABLE Portfolio_Projects.dbo.workbook$ (
+Product_id NVARCHAR(50),
+TicketNumber FLOAT,
+Slab/Extruder NVARCHAR(50),
+Slitter_number FLOAT,
+Team NVARCHAR(50),
+Month FLOAT,
+Day FLOAT,
+Weekday NVARCHAR(50),
+Year FLOAT,
+Datetime DATETIME,
+Defect NVARCHAR(50),
+Observation FLOAT(50),
+Time DATETIME
+)
+
+--Let's insert data into workbook from the indiviaul datasets:
+
+INSERT INTO Portfolio_Projects.dbo.workbook$ (Product_id,
+TicketNumber, [Slab/Extruder], Slitter_number, Team, Month, Day,
+Weekday, Year, Datetime, Defect, Observation, Time)
+(
+SELECT Product_id, TicketNumber, [Slab/Extruder], Slitter_number, Team, Month, Day, 
+Weekday, Year, Datetime, Defect, Observation, Time
+
+FROM Portfolio_Projects.dbo.A
+)
+UNION ALL
+(
+SELECT Product_id, TicketNumber, [Slab/Extruder], Slitter_number, Team, Month, Day, 
+Weekday, Year, Datetime, Defect, Observation, Time
+
+FROM Portfolio_Projects.dbo.B
+)
+UNION ALL
+(
+SELECT Product_id, TicketNumber, [Slab/Extruder], Slitter_number, Team, Month, Day, 
+Weekday, Year, Datetime, Defect, Observation, Time
+
+FROM Portfolio_Projects.dbo.C
+)
+UNION ALL
+(
+SELECT Product_id, TicketNumber, [Slab/Extruder], Slitter_number, Team, Month, Day, 
+Weekday, Year, Datetime, Defect, Observation, Time
+
+FROM Portfolio_Projects.dbo.D
+)
+UNION ALL
+
+(
+SELECT Product_id, TicketNumber, [Slab/Extruder], Slitter_number, Team, Month, Day, 
+Weekday, Year, Datetime, Defect, Observation, Time
+
+FROM Portfolio_Projects.dbo.E
+)
+UNION ALL
+
+(
+SELECT Product_id, TicketNumber, [Slab/Extruder], Slitter_number, Team, Month, Day, 
+Weekday, Year, Datetime, Defect, Observation, Time
+
+FROM Portfolio_Projects.dbo.F
+)
+
+
+
+
+--General Overview---
+SELECT *
+FROM Portfolio_Projects.dbo.workbook$
+
+---Let's use self join function to replace NULL values in "Slab/Extruder" column with an actual value which can be referenced ousing other columns
+
+SELECT W1.Product_id, W1.Observation, W2.Product_id, W2.Observation, W2.[Slab/Extruder]
+FROM Portfolio_Projects.dbo.workbook$ AS W1
+JOIN Portfolio_Projects.dbo.workbook$ AS W2
+ON W1.Product_id = W2.Product_id
+AND W1.[Observation] = W2.[Observation]
+WHERE [Slab/Extruder] IS NULL
+
+--We do this because although the  "Product_id" is same for the records but the "Observation" for each record is different.
+
+---Let's Update the NULL values
+
+UPDATE W1
+SET Slab/Extruder = 
+ISNULL(W1.Slab/Extruder, W2.Slab/Extruder)
+
+FROM Portfolio_Projects.dbo.workbook$ AS W1
+JOIN Portfolio_Projects.dbo.workbook$ AS W2
+ON W1.Product_id = W2.Product_id
+AND W1.[Observation] = W2.[Observation]
+WHERE [Slab/Extruder] IS NULL
+
+--Let's Double-check for the NULL values
+SELECT Slab/Extruder
+FROM Portfolio_Projects.dbo.workbook$
+WHERE Slab/Extruder IS NULL         ----------------0 Records
+
+
+---Let's repeat the same process for "Team" Column:
+
+UPDATE W1
+SET Team = 
+ISNULL(W1.Team, W2.Team)
+
+FROM Portfolio_Projects.dbo.workbook$ AS W1
+JOIN Portfolio_Projects.dbo.workbook$ AS W2
+ON W1.Product_id = W2.Product_id
+AND W1.[Observation] = W2.[Observation]
+WHERE [Team] IS NULL
+
+--Let's Double-check for the NULL values
+SELECT Slab/Extruder
+FROM Portfolio_Projects.dbo.workbook$
+WHERE Team IS NULL         ----------------0 Records
+
+---Now. that we have all the required information,
+--Let's begin the Analysis.
+
+
+
+
+
+---Let's count for the number of NC Sheets by Product ID
+
+SELECT Product_id, COUNT(TicketNumber) AS Count_on_NC_Sheets
+FROM Portfolio_Projects.dbo.workbook$
+GROUP BY Product_id
+ORDER BY Count_on_NC_Sheets DESC
+
+---Let's count for the number of NC Sheet by Team
+
+SELECT Team, COUNT(TicketNumber) AS Count_on_NC_Sheets
+FROM Portfolio_Projects.dbo.workbook$
+GROUP BY Team
+ORDER BY Count_on_NC_Sheets DESC
+
+----Let's count for the number of NC Sheets by the Slab/Extruder the Slab was extruded from:
+
+SELECT [Slab/Extruder], COUNT(TicketNumber) AS Count_on_NC_Sheets
+FROM Portfolio_Projects.dbo.workbook$
+GROUP BY [Slab/Extruder]
+ORDER BY Count_on_NC_Sheets DESC
+
+---NC Sheets VS Day_of_week
+
+SELECT Weekday, COUNT(TicketNumber) AS Count_on_NC_Sheets
+FROM Portfolio_Projects.dbo.workbook$
+GROUP BY Weekday
+ORDER BY Count_on_NC_Sheets DESC
+
+---NC Sheets by Month
+
+SELECT Month, COUNT(TicketNumber) AS Count_on_NC_Sheets
+FROM Portfolio_Projects.dbo.workbook$
+GROUP BY Month
+ORDER BY Count_on_NC_Sheets DESC
+
+--NC By day of the week
+
+SELECT Day, COUNT(TicketNumber) AS Count_on_NC_Sheets
+FROM Portfolio_Projects.dbo.workbook$
+GROUP BY Day
+ORDER BY Count_on_NC_Sheets DESC  
+
+---NC VS Hourly(24 hrs) basis
+
+SELECT Time, COUNT(TicketNumber) AS Count_on_NC_Sheets
+FROM Portfolio_Projects.dbo.workbook$
+GROUP BY Time
+ORDER BY Time 
+
+---NC VS Defect Type
+
+SELECT Defect, COUNT(TicketNumber) AS Count_on_NC_Sheets
+FROM Portfolio_Projects.dbo.workbook$
+GROUP BY Defect
+ORDER BY Count_on_NC_Sheets DESC
+
+----Breakdown on 1st top Defect---
+
+SELECT Defect, COUNT(TicketNumber) AS Count_on_NC_Sheets, Observation
+FROM Portfolio_Projects.dbo.workbook$
+WHERE Defect LIKE '%Under Tol%'
+GROUP BY Defect, Observation
+ORDER BY Observation
+
+---Breakdown on 2nd top defect----
+
+SELECT Defect, COUNT(TicketNumber) AS Count_on_NC_Sheets, Observation
+FROM Portfolio_Projects.dbo.workbook$
+WHERE Defect LIKE '%Slitter Marks%'
+GROUP BY Defect, Observation
+ORDER BY Observation
+
+--Breakdown on 1st top defect by slab/Extruder--
+
+SELECT [Slab/Extruder], COUNT(TicketNumber) AS Count_on_NC_Sheets, Observation
+FROM Portfolio_Projects.dbo.workbook$
+WHERE [Slab/Extruder] LIKE '%B%'
+GROUP BY [Slab/Extruder], Observation
+ORDER BY Observation
+
+--
+--Breakdown on 2ND top defect by slab/Extruder--
+SELECT [Slab/Extruder], COUNT(TicketNumber) AS Count_on_NC_Sheets, Observation
+FROM Portfolio_Projects.dbo.workbook$
+WHERE [Slab/Extruder] LIKE '%F%'
+GROUP BY [Slab/Extruder], Observation
+ORDER BY Observation
